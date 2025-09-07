@@ -19,6 +19,8 @@
 欲查看有关依赖运行库和编译工具的更多信息，以及如何运行的说明，请查阅[Rucbase使用文档](docs/Rucbase使用文档.md)
 
 欲了解如何在非Linux系统PC上部署实验环境的指导，请查阅[Rucbase环境配置文档](docs/Rucbase环境配置文档.md)
+### SSH推送
+git remote set-url origin git@github.com:mingtangke/Rucbase-HIT.git
   
 ### 个人完成时间记录
 
