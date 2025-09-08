@@ -29,8 +29,11 @@ struct RmPageHandle {
     char *slots;                // page->data的第三部分，存储表的记录，指针指向首地址，每个slot的长度为file_hdr->record_size
 
     RmPageHandle(const RmFileHdr *fhdr_, Page *page_) : file_hdr(fhdr_), page(page_) {
+        //page_hdr页面数据的起始地址,page_hdr之前是页面的meta_info
         page_hdr = reinterpret_cast<RmPageHdr *>(page->get_data() + page->OFFSET_PAGE_HDR);
+        //接着是bitmap，是位图
         bitmap = page->get_data() + sizeof(RmPageHdr) + page->OFFSET_PAGE_HDR;
+        //接着是真实的数据
         slots = bitmap + file_hdr->bitmap_size;
     }
 
@@ -41,6 +44,7 @@ struct RmPageHandle {
 };
 
 /* 每个RmFileHandle对应一个表的数据文件，里面有多个page，每个page的数据封装在RmPageHandle中 */
+/*可以认为管理的是一个文件 */
 class RmFileHandle {      
     friend class RmScan;    
     friend class RmManager;

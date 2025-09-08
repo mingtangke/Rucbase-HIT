@@ -28,6 +28,7 @@ std::istream &operator>>(std::istream &is, T &enum_val) {
     return is;
 }
 
+//Rid 是 Record Identifier（记录标识符）的缩写。它的唯一作用就是唯一地定位数据库文件中的一条记录。
 struct Rid {
     int page_no;
     int slot_no;

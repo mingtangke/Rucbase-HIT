@@ -14,14 +14,15 @@ See the Mulan PSL v2 for more details. */
 #include <cstring>
 
 static constexpr int BITMAP_WIDTH = 8;
-static constexpr unsigned BITMAP_HIGHEST_BIT = 0x80u;  // 128 (2^7)
+static constexpr unsigned BITMAP_HIGHEST_BIT = 0x80u;  // 128 (2^7) 10000000
 
+//精妙地设计呀,多尝试几下二进制数演算一下就知道了
 class Bitmap {
    public:
     // 从地址bm开始的size个字节全部置0
     static void init(char *bm, int size) { memset(bm, 0, size); }
 
-    // pos位 置1
+    // pos位 置1  （15）                      
     static void set(char *bm, int pos) { bm[get_bucket(pos)] |= get_bit(pos); }
 
     // pos位 置0

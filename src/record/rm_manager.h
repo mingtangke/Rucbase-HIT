@@ -17,6 +17,7 @@ See the Mulan PSL v2 for more details. */
 #include "rm_file_handle.h"
 
 /* 记录管理器，用于管理表的数据文件，进行文件的创建、打开、删除、关闭 */
+/* 可以认为管理的是全部文件 */
 class RmManager {
    private:
     DiskManager *disk_manager_;
@@ -44,6 +45,8 @@ class RmManager {
         file_hdr.num_pages = 1;
         file_hdr.first_free_page_no = RM_NO_PAGE;
         // We have: sizeof(hdr) + (n + 7) / 8 + n * record_size <= PAGE_SIZE
+        // 文件头 + bitmap空间数 + record记录的数据
+        // 用于对正整数 n 执行“除以 8 并向上取整”的操作  ==> (n + 7) / 8 
         file_hdr.num_records_per_page =
             (BITMAP_WIDTH * (PAGE_SIZE - 1 - (int)sizeof(RmFileHdr)) + 1) / (1 + record_size * BITMAP_WIDTH);
         file_hdr.bitmap_size = (file_hdr.num_records_per_page + BITMAP_WIDTH - 1) / BITMAP_WIDTH;

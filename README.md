@@ -27,7 +27,7 @@ git remote set-url origin git@github.com:mingtangke/Rucbase-HIT.git
 | **实验**     | **完成时间** | **工作量估计** | **难度系数** |**注意事项**|
 | ------------ | ----------------- | ----------------- | -------------- | -------------|
 | Lab0         | 第1周              | 1 h               |  易            | GoogleTest 添加|
-| Lab1        | 第1周              | 4.5h             |   中          | Delete函数的并发|
+| Lab1        | 第1周              | 4.5h             |   中             | Delete函数的并发|
 
 
 
