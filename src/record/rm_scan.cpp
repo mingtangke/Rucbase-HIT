@@ -28,22 +28,22 @@ RmScan::RmScan(const RmFileHandle *file_handle) : file_handle_(file_handle) {
 void RmScan::next() {
     // Todo:
     // 找到文件中下一个存放了记录的非空闲位置，用rid_来指向这个位置
-    while(this->rid_.page_no < file_handle_ -> file_hdr_.num_pages){
-        RmPageHandle page_handle = file_handle_->fetch_page_handle(this->rid_.page_no);
-        this->rid_.slot_no = Bitmap::next_bit(true, page_handle.bitmap,
-                                              file_handle_->file_hdr_.num_records_per_page,
-                                              this->rid_.slot_no);
-        if(this->rid_.slot_no >= this->file_handle_->file_hdr_.num_records_per_page){  //本页没有
-            if ((this->rid_.page_no + 1) == file_handle_ -> file_hdr_.num_pages){ // 遍历后续所有页，未找到
-                this->rid_ = Rid{RM_NO_PAGE, -1};
-                break;
-            }
-            else{
-                this->rid_ = Rid{this->rid_.page_no+1, -1};  //获取下一页，下一个循环继续找下一页
-            }
-        }
-        else{
+  while (rid_.page_no < file_handle_->file_hdr_.num_pages) {
+        RmPageHandle page_handle = file_handle_->fetch_page_handle(rid_.page_no);
+        int next_slot = Bitmap::next_bit(true, page_handle.bitmap, 
+                                         file_handle_->file_hdr_.num_records_per_page, 
+                                         rid_.slot_no);
+        if (next_slot < file_handle_->file_hdr_.num_records_per_page) {
+            rid_.slot_no = next_slot;
             break;
+        } else {
+            if (rid_.page_no + 1 >= file_handle_->file_hdr_.num_pages) {
+                rid_ = {RM_NO_PAGE, -1};
+                break;
+            } else {
+                rid_.page_no++;
+                rid_.slot_no = -1;
+            }
         }
     }
 }
