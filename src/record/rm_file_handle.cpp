@@ -196,7 +196,7 @@ RmPageHandle RmFileHandle::create_page_handle() {
     //     1.1 没有空闲页：使用缓冲池来创建一个新page；可直接调用create_new_page_handle()
     //     1.2 有空闲页：直接获取第一个空闲页
     // 2. 生成page handle并返回给上层
-    if(file_hdr_.first_free_page_no != -1){
+    if(file_hdr_.first_free_page_no == RM_NO_PAGE){
         return create_new_page_handle();
     }
     return fetch_page_handle(file_hdr_.first_free_page_no);
