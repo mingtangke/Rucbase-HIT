@@ -15,13 +15,20 @@ See the Mulan PSL v2 for more details. */
  * @param {Rid&} rid 记录号，指定记录的位置
  * @param {Context*} context
  * @return {unique_ptr<RmRecord>} rid对应的记录对象指针
+ * ​用于获取一条指定记录。由Rid得到record。
+ *​	内部实现逻辑是把位于指定slot的record拷贝一份，然后返回给上层。
  */
 std::unique_ptr<RmRecord> RmFileHandle::get_record(const Rid& rid, Context* context) const {
     // Todo:
     // 1. 获取指定记录所在的page handle
     // 2. 初始化一个指向RmRecord的指针（赋值其内部的data和size）
+    page_id_t page_no = rid.page_no;
+    RmPageHandle page_handle = fetch_page_handle(page_no);
 
-    return nullptr;
+    if(!page_handle.page)  return nullptr;
+    std::unique_ptr<RmRecord> rm_record = std::make_unique<RmRecord>(page_handle.file_hdr->record_size,page_handle.get_slot(rid.slot_no));
+    return rm_record;
+
 }
 
 /**
@@ -29,16 +36,30 @@ std::unique_ptr<RmRecord> RmFileHandle::get_record(const Rid& rid, Context* cont
  * @param {char*} buf 要插入的记录的数据
  * @param {Context*} context
  * @return {Rid} 插入的记录的记录号（位置）
+ * 用于插入一条指定记录。
+​	对于堆文件组织形式，只需要找到一个有足够空间存放该记录的页面。当所有已分配页面中都没有空间时，就申请一个新页面来存放该记录。
+​	注意更新bitmap，它跟踪了每个slot是否存放了record；此外，如果当前page handle中的page插入后已满，还需要更新`file_hdr`的第一个空闲页。
  */
 Rid RmFileHandle::insert_record(char* buf, Context* context) {
     // Todo:
     // 1. 获取当前未满的page handle
-    // 2. 在page handle中找到空闲slot位置
+    // 2. 在pagehandle中找到空闲slot位置
     // 3. 将buf复制到空闲slot位置
     // 4. 更新page_handle.page_hdr中的数据结构
     // 注意考虑插入一条记录后页面已满的情况，需要更新file_hdr_.first_free_page_no
+    RmPageHandle page_handle = create_page_handle();
+    int slot_pos = Bitmap::first_bit(false,page_handle.bitmap,page_handle.file_hdr->num_records_per_page);
+    char* slot_ = page_handle.get_slot(slot_pos);
 
-    return Rid{-1, -1};
+    Bitmap::set(page_handle.bitmap,slot_pos);
+    memcpy(slot_,buf,file_hdr_.record_size);
+    page_handle.page_hdr->num_records += 1;
+
+    if(page_handle.page_hdr->num_records == page_handle.file_hdr->num_records_per_page){
+        file_hdr_.first_free_page_no = page_handle.page_hdr->next_free_page_no;
+    }
+    
+    return Rid{page_handle.page->get_page_id().page_no, slot_pos};
 }
 
 /**
@@ -47,19 +68,39 @@ Rid RmFileHandle::insert_record(char* buf, Context* context) {
  * @param {char*} buf 要插入记录的数据
  */
 void RmFileHandle::insert_record(const Rid& rid, char* buf) {
-    
+    RmPageHandle page_handle = fetch_page_handle(rid.page_no);
+    char* slot_ = page_handle.get_slot(rid.slot_no);
+
+    Bitmap::set(page_handle.bitmap,rid.slot_no);
+    memcpy(slot_,buf,file_hdr_.record_size);
+    page_handle.page_hdr->num_records += 1;
+
+    if(page_handle.page_hdr->num_records == page_handle.file_hdr->num_records_per_page){
+        file_hdr_.first_free_page_no = page_handle.page_hdr->next_free_page_no;
+    }
+    return;
 }
 
 /**
  * @description: 删除记录文件中记录号为rid的记录
  * @param {Rid&} rid 要删除的记录的记录号（位置）
  * @param {Context*} context
+ * ​用于删除一条指定记录。使用rid中的page_no和slot_no。
+​	先获取page handle，然后将page的bitmap中表示对应槽位的bit置0。
+​	注意如果删除操作导致该页面恰好从已满变为未满，那么需要调用`release_page_handle()`。
  */
 void RmFileHandle::delete_record(const Rid& rid, Context* context) {
     // Todo:
     // 1. 获取指定记录所在的page handle
     // 2. 更新page_handle.page_hdr中的数据结构
     // 注意考虑删除一条记录后页面未满的情况，需要调用release_page_handle()
+    RmPageHandle page_handle = fetch_page_handle(rid.page_no);
+    Bitmap::reset(page_handle.bitmap,rid.slot_no);
+    if(page_handle.page_hdr->num_records == page_handle.file_hdr->num_records_per_page){
+        page_handle.page_hdr->num_records--;
+        release_page_handle(page_handle);
+    }
+
 }
 
 
@@ -73,13 +114,17 @@ void RmFileHandle::update_record(const Rid& rid, char* buf, Context* context) {
     // Todo:
     // 1. 获取指定记录所在的page handle
     // 2. 更新记录
+    RmPageHandle page_handle = fetch_page_handle(rid.page_no);
+    char *slot_ = page_handle.get_slot(rid.slot_no);
+    memcpy(slot_,buf,page_handle.file_hdr->record_size);
 
 }
 
 /**
  * 以下函数为辅助函数，仅提供参考，可以选择完成如下函数，也可以删除如下函数，在单元测试中不涉及如下函数接口的直接调用
 */
-/**
+/**​用于获取指定页面对应的`RmPageHandle`。
+​	提示：调用`BufferPoolManager::fetch_page()`获取指定页面。
  * @description: 获取指定页面的页面句柄
  * @param {int} page_no 页面号
  * @return {RmPageHandle} 指定页面的句柄
@@ -88,21 +133,55 @@ RmPageHandle RmFileHandle::fetch_page_handle(int page_no) const {
     // Todo:
     // 使用缓冲池获取指定页面，并生成page_handle返回给上层
     // if page_no is invalid, throw PageNotExistError exception
+    // 由于是const，所以不需要修改file
+    if(page_no == INVALID_PAGE_ID) {
+        throw PageNotExistError("",page_no);
+        return RmPageHandle(&file_hdr_, nullptr);
+    }
+    PageId page_id = {fd_,page_no};
+    Page * target_page = buffer_pool_manager_->fetch_page(page_id);
 
-    return RmPageHandle(&file_hdr_, nullptr);
+    if(!target_page||target_page->get_page_id().page_no == INVALID_PAGE_ID){
+        throw PageNotExistError("",page_no);
+        return RmPageHandle(&file_hdr_, nullptr);
+    }
+
+    return RmPageHandle(&file_hdr_, target_page);
+ 
 }
 
 /**
  * @description: 创建一个新的page handle
  * @return {RmPageHandle} 新的PageHandle
+ * ​用于创建一个新的`RmPageHandle`。
+​	用缓冲池创建新页，并更新`page_hdr`和`file_hdr`中的各项内容。
+​	提示：调用`BufferPoolManager::new_page()`创建新页面。
  */
 RmPageHandle RmFileHandle::create_new_page_handle() {
     // Todo:
-    // 1.使用缓冲池来创建一个新page
+    // 1.使用缓冲池来创建一个新page,根据buffer_pool_manager_->new_page()，有效输入是PageId中的fd
     // 2.更新page handle中的相关信息
     // 3.更新file_hdr_
+    PageId* page_id = new PageId;
+    Page *new_page = new Page;
 
-    return RmPageHandle(&file_hdr_, nullptr);
+    page_id->fd = fd_;
+    page_id->page_no = INVALID_PAGE_ID;
+    new_page = buffer_pool_manager_->new_page(page_id);
+
+    if(new_page == nullptr){
+        return RmPageHandle(&file_hdr_, nullptr);
+    }
+
+    file_hdr_.num_pages++;
+    if(file_hdr_.first_free_page_no == -1 ){
+        file_hdr_.first_free_page_no = new_page->get_page_id().page_no;  //maybe this is a bug for me
+    }
+    RmPageHandle page_handle =  RmPageHandle(&file_hdr_, new_page);
+    page_handle.page_hdr->next_free_page_no = RM_NO_PAGE;
+    page_handle.page_hdr->num_records = 0;
+    return page_handle;
+   
 }
 
 /**
@@ -117,17 +196,24 @@ RmPageHandle RmFileHandle::create_page_handle() {
     //     1.1 没有空闲页：使用缓冲池来创建一个新page；可直接调用create_new_page_handle()
     //     1.2 有空闲页：直接获取第一个空闲页
     // 2. 生成page handle并返回给上层
-
-    return RmPageHandle(&file_hdr_, nullptr);
+    if(file_hdr_.first_free_page_no != -1){
+        return create_new_page_handle();
+    }
+    return fetch_page_handle(file_hdr_.first_free_page_no);
 }
 
 /**
  * @description: 当一个页面从没有空闲空间的状态变为有空闲空间状态时，更新文件头和页头中空闲页面相关的元数据
+​	当page handle中的page从已满变成未满的时候调用此函数。
+   相当于现在是空的情况下
+​	提示：更新`page_hdr`的下一个空闲页和`file_hdr`的第一个空闲页。
  */
 void RmFileHandle::release_page_handle(RmPageHandle&page_handle) {
     // Todo:
     // 当page从已满变成未满，考虑如何更新：
     // 1. page_handle.page_hdr->next_free_page_no
     // 2. file_hdr_.first_free_page_no
+    page_handle.page_hdr->next_free_page_no = file_hdr_.first_free_page_no;
+    file_hdr_.first_free_page_no = page_handle.page->get_page_id().page_no;
     
 }
