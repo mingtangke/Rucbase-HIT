@@ -31,6 +31,7 @@ git remote set-url origin git@github.com:mingtangke/Rucbase-HIT.git
 | Lab2         | 第1周               | 4h                |   中           | 两个任务完成之后再一起测试      |
 | Lab3         | 第1周               | 6h                |   难           | crabbing protocol unfinished|
 | Lab4         | 第1周               | 3.5h                |   中         | 先阅读一下index部分的函数     |
+| Lab5         | 第1周               | 2h                |   目测很难         | 我先去理解一下火山模型     |
 
 
 
