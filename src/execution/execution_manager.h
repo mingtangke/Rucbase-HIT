@@ -34,11 +34,13 @@ class QlManager {
    public:
     QlManager(SmManager *sm_manager, TransactionManager *txn_mgr) 
         : sm_manager_(sm_manager),  txn_mgr_(txn_mgr) {}
-
-    void run_mutli_query(std::shared_ptr<Plan> plan, Context *context);
+    //查询计划(共享指针)和执行上下文
+    void run_mutli_query(std::shared_ptr<Plan> plan, Context *context); 
+    //执行计划、事务ID指针和上下文
     void run_cmd_utility(std::shared_ptr<Plan> plan, txn_id_t *txn_id, Context *context);
+    //执行器树根节点(唯一指针)、选择的列集合和上下文
     void select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, std::vector<TabCol> sel_cols,
                         Context *context);
-
+    //处理DML(数据操作语言)命令如INSERT、UPDATE、DELETE
     void run_dml(std::unique_ptr<AbstractExecutor> exec);
 };
