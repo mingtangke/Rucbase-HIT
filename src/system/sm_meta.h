@@ -69,7 +69,7 @@ struct IndexMeta {
 struct TabMeta {
     std::string name;                   // 表名称
     std::vector<ColMeta> cols;          // 表包含的字段
-    std::vector<IndexMeta> indexes;     // 表上建立的索引
+    std::vector<IndexMeta> indexes;     // 表上建立的索引.单独一个索引可能会包括一些字段的
 
     TabMeta(){}
 
