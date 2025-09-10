@@ -100,6 +100,7 @@ class IxNodeHandle {
 
     void set_parent_page_no(page_id_t parent) { page_hdr->parent = parent; }
 
+    //因为是一条记录，所以这里是col_tot_len，也就是包含的总长度。
     char *get_key(int key_idx) const { return keys + key_idx * file_hdr->col_tot_len_; }
 
     Rid *get_rid(int rid_idx) const { return &rids[rid_idx]; }
