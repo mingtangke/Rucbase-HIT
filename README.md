@@ -30,9 +30,9 @@ git remote set-url origin git@github.com:mingtangke/Rucbase-HIT.git
 | Lab0         | 第1周               | 1 h               |    易          | GoogleTest 添加             |
 | Lab1         | 第1周               | 4.5h              |   中           | Delete函数的并发             |
 | Lab2         | 第1周               | 4h                |   中           | 两个任务完成之后再一起测试      |
-| Lab3         | 第1周               | 10h                |   难           | crabbing protocol unfinished|
-| Lab4         | 第1周               | 3.5h                |   中         | 先阅读一下index部分的函数     |
-| Lab5         | 第1周               | ~                |   目测很难         | 我先去理解一下火山模型     |
+| Lab3         | 第1周               | 10h                |   难           | crabbing protocol unfinished,验证B+树推荐使用test_demo里面的图形化函数|
+| Lab4         | 第1周               | 3.5h               |   中         | 先阅读一下index部分的函数     |
+| Lab5         | 第1周               | ~                 |   目测很难         | 我先去理解一下火山模型     |
 
 
 
