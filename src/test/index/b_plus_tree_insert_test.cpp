@@ -313,7 +313,7 @@ class BPlusTreeTests : public ::testing::Test {
  * @note lab2 计分：10 points
  */
 TEST_F(BPlusTreeTests, InsertTest) {
-    const int64_t scale = 10;
+    const int64_t scale = 50;
     const int order = 3;
 
     assert(order > 2 && order <= ih_->file_hdr_->btree_order_);
@@ -325,6 +325,7 @@ TEST_F(BPlusTreeTests, InsertTest) {
     }
 
     const char *index_key;
+    int count = 0;
     for (auto key : keys) {
         int32_t value = key & 0xFFFFFFFF;  // key的低32位
         Rid rid = {.page_no = static_cast<int32_t>(key >> 32),
@@ -332,10 +333,12 @@ TEST_F(BPlusTreeTests, InsertTest) {
         index_key = (const char *)&key;
         bool insert_ret = ih_->insert_entry(index_key, rid, txn_.get());  // 调用Insert
         ASSERT_EQ(insert_ret, true);
+        std::cout<<count<<std::endl;
+        count++;
 
         // Draw(buffer_pool_manager_.get(), "insert" + std::to_string(key) + ".dot");
     }
-
+    std::cout<<"Here is the 0"<<std::endl;
     std::vector<Rid> rids;
     for (auto key : keys) {
         rids.clear();
@@ -346,7 +349,7 @@ TEST_F(BPlusTreeTests, InsertTest) {
         int32_t value = key & 0xFFFFFFFF;
         EXPECT_EQ(rids[0].slot_no, value);
     }
-
+    std::cout<<"Here is the 1"<<std::endl;
     // 找不到未插入的数据
     for (int key = scale + 1; key <= scale + 100; key++) {
         rids.clear();
@@ -354,6 +357,7 @@ TEST_F(BPlusTreeTests, InsertTest) {
         ih_->get_value(index_key, &rids, txn_.get());  // 调用GetValue
         EXPECT_EQ(rids.size(), 0);
     }
+    // exit(0);
 }
 
 /**
@@ -377,6 +381,7 @@ TEST_F(BPlusTreeTests, LargeScaleTest) {
     auto rng = std::default_random_engine{};
     std::shuffle(keys.begin(), keys.end(), rng);
 
+    int count = 0;
     const char *index_key;
     for (auto key : keys) {
         int32_t value = key & 0xFFFFFFFF;  // key的低32位
@@ -385,6 +390,9 @@ TEST_F(BPlusTreeTests, LargeScaleTest) {
         index_key = (const char *)&key;
         bool insert_ret = ih_->insert_entry(index_key, rid, txn_.get());  // 调用Insert
         ASSERT_EQ(insert_ret, true);
+        std::vector<Rid> rids;
+        ih_->get_value(index_key, &rids, txn_.get());  // 调用GetValue
+        
     }
 
     // test GetValue
@@ -414,3 +422,5 @@ TEST_F(BPlusTreeTests, LargeScaleTest) {
     }
     EXPECT_EQ(current_key, keys.size() + 1);
 }
+// make b_plus_tree_insert_test
+// ./bin/b_plus_tree_insert_test

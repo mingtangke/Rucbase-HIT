@@ -353,13 +353,23 @@ TEST_F(BPlusTreeTests, InsertAndDeleteTest1) {
     for (int64_t key = 1; key <= delete_scale; key++) {  // 1~9
         delete_keys.push_back(key);
     }
+    int count = 1 ;
+    
     for (auto key : delete_keys) {
         index_key = (const char *)&key;
+        std::cout<<count<<std::endl;
+        count++;
+        if(count == 9){
+            std::cout<<"bug"<<std::endl;
+        }
         bool delete_ret = ih_->delete_entry(index_key, txn_.get());  // 调用Delete
         ASSERT_EQ(delete_ret, true);
 
-        // Draw(buffer_pool_manager_.get(), "InsertAndDeleteTest1_delete" + std::to_string(key) + ".dot");
+        Draw(buffer_pool_manager_.get(), "InsertAndDeleteTest1_delete" + std::to_string(key) + ".dot");
     }
+    // make b_plus_tree_delete_test
+// ./bin/b_plus_tree_delete_test
+
 
     // scan keys by Ixscan
     int64_t start_key = *delete_keys.rbegin() + 1;
